@@ -7,7 +7,7 @@ ARG PYTHON_SOURCE_SHA256=93e583f243454e6e9e4588ca2c2662206ad961659863277afcdb968
 
 # The manylinux wheel-build interpreters need not include a shared libpython.
 # PyInstaller requires it, so compile the same CPython patch tested on macOS.
-RUN dnf install -y \
+RUN dnf --disablerepo=epel install -y \
         openssl-devel zlib-devel bzip2-devel libffi-devel xz-devel \
         readline-devel sqlite-devel file fontconfig \
     && dnf clean all
