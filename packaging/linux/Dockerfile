@@ -10,6 +10,8 @@ ARG PYTHON_SOURCE_SHA256=93e583f243454e6e9e4588ca2c2662206ad961659863277afcdb968
 RUN dnf --disablerepo=epel install -y \
         openssl-devel zlib-devel bzip2-devel libffi-devel xz-devel \
         readline-devel sqlite-devel file fontconfig \
+        xcb-util-wm xcb-util-image xcb-util-keysyms xcb-util-renderutil \
+        libxkbcommon libxkbcommon-x11 \
     && dnf clean all
 
 RUN curl --fail --location --silent --show-error \
