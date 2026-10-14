@@ -1,6 +1,8 @@
+[简体中文](README.md) · [English](README.en.md)
+
 # OneLine（一行笔记）
 
-OneLine 是一个只占一行屏幕空间、内部保留完整多行纯文本的悬浮编辑器。当前为阶段三 Mac 开发版；银河麒麟便携版尚未构建或验证。
+OneLine 是一个只占一行屏幕空间、内部保留完整多行纯文本的悬浮编辑器。Mac 开发版已通过发布门禁；Linux x86-64 onedir 便携版已在 CI 构建，但尚未经过银河麒麟 V10 实机验证。
 
 ## 在 Mac 上启动
 
@@ -12,6 +14,8 @@ OneLine 是一个只占一行屏幕空间、内部保留完整多行纯文本的
 ```
 
 以后只需执行 `./scripts/run-macos.sh`。依赖安装在项目内的 `.venv`。右侧 `⋯` 菜单可以退出；窗口隐藏后可从系统菜单栏的 OneLine 图标恢复或退出。
+
+Linux x86-64 onedir 候选包和 SHA256 可从 [GitHub Actions 构建结果](https://github.com/Lucas-Evan/OneLine/actions/runs/38520061426/artifacts/11873098074)下载。该包已通过 CI 离屏测试，不代表银河麒麟图形界面已验收；环境检查与人工测试步骤见 [Linux 打包报告](docs/LINUX_PACKAGING_PHASE1_REPORT.md)及[银河麒麟验收清单](docs/KYLIN_ACCEPTANCE_CHECKLIST.md)。
 
 ## 使用方式
 
