@@ -1,0 +1,35 @@
+name: OneLine Linux x86-64 onedir (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-onedir:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout release candidate
+        uses: actions/checkout@v4
+
+      - name: Build conservative Linux container
+        run: docker build --platform linux/amd64 --file packaging/linux/Dockerfile --tag oneline-phase1:local .
+
+      - name: Release tests, onedir build, ldd and frozen smoke
+        run: |
+          docker image inspect oneline-phase1:local --format 'Container image ID: {{.Id}}'
+          docker run --rm --network none --platform linux/amd64 \
+            --volume "$PWD:/workspace" --workdir /workspace \
+            oneline-phase1:local bash scripts/build-linux.sh
+
+      - name: Upload Linux verification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OneLine-linux-x86_64-onedir
+          if-no-files-found: error
+          path: |
+            dist/OneLine-linux-x86_64.tar.gz
+            dist/OneLine-linux-x86_64.sha256
+            packaging/linux/dependency-report.txt

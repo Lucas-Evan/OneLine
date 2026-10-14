@@ -1,0 +1,10 @@
+# Install with --only-binary=:all: --no-deps; every direct/transitive package is pinned.
+-r requirements-runtime.txt
+PyInstaller==6.15.0
+pyinstaller-hooks-contrib==2025.8
+altgraph==0.17.4
+packaging==25.0
+setuptools==80.9.0
+pytest==8.3.5
+iniconfig==2.1.0
+pluggy==1.5.0
