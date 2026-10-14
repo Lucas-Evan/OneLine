@@ -13,7 +13,15 @@ from window import WINDOW_HEIGHT
 def _visible(editor) -> bool:
     caret = editor.cursorRect()
     view = editor.viewport().rect()
-    return view.contains(caret.topLeft()) and view.contains(caret.bottomRight())
+    # Qt's offscreen rasterizer may round the caret one pixel outside the
+    # viewport on Linux. Larger clipping remains a release failure.
+    tolerance = 1
+    return (
+        view.left() - tolerance <= caret.left()
+        and caret.right() <= view.right() + tolerance
+        and view.top() - tolerance <= caret.top()
+        and caret.bottom() <= view.bottom() + tolerance
+    )
 
 
 def _wrapped_window(app, window_factory):

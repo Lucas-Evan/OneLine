@@ -11,6 +11,10 @@ if [[ "$(pwd)" != /workspace ]]; then
   echo "必须在受控构建容器的 /workspace 挂载目录运行。" >&2
   exit 1
 fi
+if [[ "$(id -u)" == 0 ]]; then
+  echo "Release Gate 必须以非 root 用户运行，以验证文件权限故障路径。" >&2
+  exit 1
+fi
 
 sha256sum --check packaging/linux/source-baseline.sha256
 python3.13 -c 'import sys; assert sys.version_info[:3] == (3, 13, 5), sys.version'

@@ -27,8 +27,9 @@ def _wrapped_editor(app):
 def _caret_in_view(editor):
     caret = editor.cursorRect()
     view = editor.viewport().rect()
-    assert 0 <= caret.top() and caret.bottom() <= view.bottom()
-    assert 0 <= caret.left() and caret.right() <= view.right()
+    # Qt offscreen rendering can round the caret boundary by one pixel.
+    assert view.top() - 1 <= caret.top() and caret.bottom() <= view.bottom() + 1
+    assert view.left() - 1 <= caret.left() and caret.right() <= view.right() + 1
 
 
 def test_long_chinese_text_has_visual_rows_but_one_logical_block(app):

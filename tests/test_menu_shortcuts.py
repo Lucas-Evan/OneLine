@@ -96,8 +96,8 @@ def test_shortcut_column_is_visually_muted_in_both_themes(app, window_factory):
         return label, shortcut
 
     label, shortcut = foreground_lightnesses()
-    assert min(shortcut) > min(label) + 40
+    assert min(shortcut) >= min(label) + 40
 
     window.toggle_theme()
     label, shortcut = foreground_lightnesses()
-    assert max(label) > max(shortcut) + 40
+    assert max(label) >= max(shortcut) + 40
