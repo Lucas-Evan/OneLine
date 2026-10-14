@@ -24,6 +24,6 @@ tar -xzf OneLine-linux-x86_64.tar.gz
 - spec 显式收集 xcb、offscreen 插件；平台插件和关键 Qt 库必须通过 `ldd`。不要将 glibc、系统 loader 或全部 X11 库盲目复制进包。
 - `QT_QPA_PLATFORM=offscreen` 的冻结程序 smoke 只证明无显示环境下可构造 Qt/窗口/编辑器/Overlay 并插入文本；不证明银河麒麟 GUI、中文 IME 或 X11/XWayland 兼容。
 
-## 仓库冻结提醒
+## 已验证候选
 
-截至 2026-10-14，本地仓库无首个 Git commit，也没有 remote。先将生产文件、测试和打包配置提交到私有仓库，再创建不可移动的 release-candidate tag（或明确的 release-candidate branch），然后手动触发 workflow。当前 SHA256 清单只能防止本地脚本悄悄改变稳定模块，不能替代 Git 提交/tag。
+2026-10-14 的成功构建对应提交 `7552fe0c5f9b9396fbd0bb15d19343b96b1f5a9d`，候选分支为 `codex/linux-x86_64-rc1`；[Actions 运行 #38520061426](https://github.com/Lucas-Evan/OneLine/actions/runs/38520061426) 含可下载 tar.gz、SHA256 和依赖报告。`source-baseline.sha256` 额外校验稳定生产模块，不替代 Git 提交。该 artifact 尚未经过银河麒麟实机 GUI 验收。

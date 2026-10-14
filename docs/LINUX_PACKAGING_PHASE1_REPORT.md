@@ -1,38 +1,40 @@
 # OneLine Linux Packaging Phase 1 Report
 
-状态：**B — Linux 构建仍有明确外部验证缺口，尚无可交付 tar.gz。** 日期：2026-10-14。
+状态：**A — onedir artifact 已准备好，可以转银河麒麟实机验证。** 日期：2026-10-14。
 
-## 发布候选与变更范围
+## 1. 发布候选与修改文件
 
-开始前检查：本地仓库无首个 Git commit、无 GitHub remote；整棵源码处于未跟踪状态。随后确认用户提供的远端 `main` 已有提交 `a4a0917`，其 12 个生产文件与本地同名文件一致。已从远端提交创建隔离的候选克隆，加入本阶段文件并生成候选提交；未覆盖远端历史，也未修改 `editor.py`、`visual_line_overlay.py`、`window.py`、QTextDocument、输入/删除/光标/滚动/IME 行为。`packaging/linux/source-baseline.sha256` 冻结了 8 个生产模块的字节哈希。
+成功构建提交：`7552fe0c5f9b9396fbd0bb15d19343b96b1f5a9d`；保留候选分支 `codex/linux-x86_64-rc1`。开始时本地仓库尚无首个提交、无 remote；用户提供的 GitHub 仓库已有 `a4a0917`，其生产文件与本地同名文件一致。用户明确允许将本阶段源码、测试与打包配置推送到公开仓库。远端原有历史和 `LICENSE` 均保留。
 
-本轮新增：`packaging/OneLine.spec`、`packaging/linux/{Dockerfile,frozen_entry.py,requirements-runtime.txt,requirements-build.txt,source-baseline.sha256,README.md,dependency-notes.md}`、`packaging/LICENSE_NOTES.md`、`scripts/{build-linux.sh,smoke-linux-build.sh,kylin-system-check.sh}`、`.github/workflows/linux-x86_64-onedir.yml`、`docs/KYLIN_ACCEPTANCE_CHECKLIST.md`、`.dockerignore`；修改 `.gitignore` 以允许追踪 spec、忽略生成的依赖报告。
+本阶段新增 `.github/workflows/linux-x86_64-onedir.yml`、`.dockerignore`、`packaging/OneLine.spec`、`packaging/linux/` 内的 Dockerfile、锁定依赖、入口、基线哈希及说明、`packaging/LICENSE_NOTES.md`、`scripts/build-linux.sh`、`scripts/smoke-linux-build.sh`、`scripts/kylin-system-check.sh`、`docs/KYLIN_ACCEPTANCE_CHECKLIST.md`。同步纳入现有测试和文档，调整 `.gitignore`；为 Linux offscreen 字体渲染与非 root 权限测试做了测试/CI 层适配。CI 中发现的问题只修正 spec 路径和构建容器 XCB 依赖。**未修改** `editor.py`、`visual_line_overlay.py`、`window.py` 或 QTextDocument、输入、删除、光标、滚动、IME 流程。`packaging/linux/source-baseline.sha256` 在 CI 中核验了 8 个稳定生产模块。
 
-## 构建设计（尚未实际执行）
+## 2–6. 构建环境、依赖和 spec
 
-- Docker 容器：`quay.io/pypa/manylinux_2_28_x86_64:2026.05.07-2`，AlmaLinux 8 系 userspace，预期 glibc 2.28；GitHub runner 仅运行 Docker，不以 Ubuntu 系统库生成产物。
-- Python：3.13.5，从官方源码校验 SHA256 后以 `--enable-shared` 构建；通用 x86-64 编译目标，不使用 `-march=native`。
-- PyQt5：5.15.11；Qt 运行库包：5.15.19；PyQt5-sip：12.20.0。与已通过 Mac 门禁的版本一致。
-- PyInstaller：6.15.0；hooks-contrib：2025.8。只做 onedir；spec 显式检查并纳入 `libqxcb.so` 与 `libqoffscreen.so`，无图标/数据资产，排除测试与开发缓存。
-- 顺序：源码哈希检查 → `pip check` → Linux offscreen Release Gate → PyInstaller → `file`/关键 `ldd` → 真正的冻结二进制 offscreen smoke → tar.gz → SHA256 → Actions artifact 上传。任何一步失败即停止。
+- 工作流：[运行 #38520061426](https://github.com/Lucas-Evan/OneLine/actions/runs/38520061426)，手动 `workflow_dispatch`，结论 `success`。Ubuntu runner 仅作 Docker 宿主；实际构建使用 `quay.io/pypa/manylinux_2_28_x86_64:2026.05.07-2`，报告显示 AlmaLinux 8.10、x86_64、glibc 2.28。该次容器 image ID：`sha256:35ff8407e9f6a578125a66801616f13283b686f481a15998fdd8d109b66e3223`。
+- Python 3.13.5：固定源码 SHA256，从官方源码构建共享 libpython；编译目标 `-march=x86-64 -mtune=generic`。PyQt5 5.15.11、Qt runtime 5.15.19、PyQt5-sip 12.20.0。PyInstaller 6.15.0、hooks-contrib 2025.8；构建测试依赖不作为应用目录内容。
+- `packaging/OneLine.spec` 只做 onedir，入口为 `packaging/linux/frozen_entry.py`，显式纳入 `libqxcb.so`、`libqoffscreen.so`，排除 pytest、测试目录与常见开发模块；无图标或其他发行资源。CPython、PyQt 与 PyInstaller 版本均锁定，未升级已验证的 PyQt5。
+- Dockerfile 仅为构建/`ldd` 检查安装 XCB 与 xkbcommon 系统依赖；不盲目将 glibc、loader 或全部 X11 库复制进发行物。目标机依赖仍须现场检查。
 
-## 已完成的本机验证
+## 7–9. Linux Release Gate、smoke 与动态依赖
 
-- macOS 离屏 Release Gate：69 passed、2 skipped；此前 Cocoa Gate：71 passed（本轮未重复）。
-- 源码模式的打包入口 smoke：`ONELINE_SMOKE_OK`，仅表明入口逻辑可构造窗口、Editor、Overlay 并插入合成文本，不是 Linux 冻结程序 smoke。
-- 3 个 shell 脚本通过 `bash -n`；spec/入口通过 Python 语法检查；GitHub Actions YAML 可解析；8 个生产模块与哈希清单一致。
-- `build-linux.sh` 在 macOS 上按设计拒绝运行，未交叉生成 Linux 程序。
+CI 顺序：生产源码哈希校验 → `pip check` → Linux offscreen Release Gate → PyInstaller → ELF / Qt 插件 / `ldd` 检查 → **冻结后的** OneLine offscreen smoke → tar.gz / SHA256 → 上传。
 
-## 未完成的 Phase 1 成功标准
+- Linux Release Gate：**69 passed，2 skipped，49 deselected**；测试失败会阻止打包。既有 macOS Cocoa Gate 为 71 passed，本轮未重复，不声称麒麟 GUI 已通过。
+- PyInstaller onedir：成功。冻结程序输出 `ONELINE_SMOKE_OK`，随后脚本输出 `ONELINE_LINUX_SMOKE_OK`；已创建 QApplication、窗口、Editor、Overlay，插入合成测试文本并正常退出。
+- `file` 确认主程序为 Linux x86-64 ELF。构建报告对主程序、`libqxcb.so`、`libqoffscreen.so` 和 `libQt5Core.so.5` 执行 `ldd`；CI 检查未发现 `not found`。详细结果见 Actions artifact 中的 `packaging/linux/dependency-report.txt`。这只证明该构建容器中的依赖可解析。
+- Mac 开发机未构建 Linux 二进制；`build-linux.sh` 会拒绝 macOS 环境。
 
-本机没有 Docker。远端已确认存在；本机 Git HTTPS 缺少写入凭据，SSH 公钥也未获 GitHub 接受。GitHub 连接已具备推送权限。连接显示该仓库当前为公开，用户已明确允许将本阶段源码、测试和打包文件推送到该公开仓库。Actions 尚未触发，故**未在 Linux 容器运行 Release Gate、PyInstaller 或冻结程序 smoke**。尚无 `dependency-report.txt`、`dist/OneLine/`、tar.gz、SHA256 或可下载的 Actions artifact。`ldd libqxcb.so` 与目标麒麟兼容性均未验证。不能将前述配置与 Mac 检查报告为“Artifact 已准备好”。
+## 10–11. Artifact 与 SHA256
 
-## 风险与下一步
+- 下载：[OneLine-linux-x86_64-onedir（Actions artifact）](https://github.com/Lucas-Evan/OneLine/actions/runs/38520061426/artifacts/11873098074)。Artifact ID `11873098074`，ZIP 大小 **64,280,301 bytes**，包含 tar.gz、校验文件和依赖报告；当前 GitHub 元数据标示未过期。
+- `dist/OneLine-linux-x86_64.tar.gz`：**64,850,061 bytes**；SHA256：`d865620fdb744a5a5aca804d0f0b2055527a6071d796e702a779b34d8bc37b4b`。CI 的 `sha256sum --check` 通过；下载 ZIP 后再次独立计算 tar.gz 哈希，与校验文件一致。
+- Artifact ZIP SHA256：`faba163343d2ba5ac4055afd44b260caab1ebd5409cc9f2bfbf571d23aada6da`，与 GitHub artifact 元数据一致。ZIP 完整性检查通过。
+- 解压 tar.gz 后的入口：`./OneLine/OneLine`；不需要目标机 Python、pip 或 virtualenv。
 
-1. 通过已连接的 GitHub 权限上传已审查的候选提交到远端默认分支，以便手动触发 `workflow_dispatch`；远端现有提交和 `LICENSE` 必须保留。创建明确的 RC tag/branch。
-2. 手动触发工作流，检查容器构建、Python shared library、依赖解析、Release Gate、PyInstaller、`ldd`、冻结 smoke、SHA256 与 artifact 下载。若失败先区分 packaging 与 application 问题，不修改编辑核心掩盖故障。
-3. 记录运行中的容器 image ID、实际 glibc、tar.gz 大小及 SHA256。镜像目前固定 tag 而非 digest，后续需固定不可变 digest。
-4. 将 artifact 转到银河麒麟 V10 兆芯 x86-64 实机，先运行只读环境检查，再按 `docs/KYLIN_ACCEPTANCE_CHECKLIST.md` 验收 X11/XWayland、Qt 插件、中文 IME、文件与 Session。
-5. 正式发行前完成 `packaging/LICENSE_NOTES.md` 所列许可核对；本阶段不作法律结论。
+## 12–13. 已知风险与银河麒麟实机步骤
 
-构建 userspace 选择参考 [manylinux 官方说明](https://github.com/pypa/manylinux)；PyInstaller 官方指出 Linux 上不捆绑 glibc，应在足够旧的系统构建：[Linux 兼容性说明](https://pyinstaller.org/en/stable/usage.html)。银河麒麟 V10 的实际子版本/架构仍须现场核实；[麒麟桌面 V10 SP1 官方发布说明](https://www.kylinos.cn/upload/1/kycms/20250610/1932360363166240768.pdf)列出了相关 glibc 版本，不能替代目标机器检查。
+本次 `offscreen` smoke **不等于** 银河麒麟 V10 的真实桌面验收。目标机的 glibc 版本、兆芯 x86-64 指令兼容、X11/XWayland、`libqxcb.so` 所需系统库、Qt 字体/中文 IME、托盘、窗口管理器与全局快捷键均待现场确认。容器镜像固定 tag 而未固定 digest，后续可提高供应链复现性。正式分发前须处理 `packaging/LICENSE_NOTES.md` 中的 PyQt5 许可事项；本报告不作法律结论。
+
+在目标机先运行只读 `scripts/kylin-system-check.sh`，核对架构、glibc 和显示会话；再校验 tar.gz SHA256、解压、执行 `./OneLine/OneLine`，按 `docs/KYLIN_ACCEPTANCE_CHECKLIST.md` 逐项检查。遇到 xcb 启动错误，先使用 `QT_DEBUG_PLUGINS=1` 和 `ldd` 定位真正缺失项，不修改系统 Qt、glibc、loader 或 `LD_LIBRARY_PATH`。
+
+本阶段结论仅为 **A — artifact 可供麒麟实机验证**；不代表麒麟兼容性已通过。未开始 onefile、deb、rpm、AppImage、安装器、自动更新或正式 GitHub Release。
