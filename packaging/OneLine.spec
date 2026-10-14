@@ -6,7 +6,8 @@ from pathlib import Path
 from PyQt5.QtCore import QLibraryInfo
 
 
-project_root = Path(SPECPATH).resolve().parent.parent
+# SPECPATH is the directory containing this spec file.
+project_root = Path(SPECPATH).resolve().parent
 plugin_dir = Path(QLibraryInfo.location(QLibraryInfo.PluginsPath)) / "platforms"
 platform_plugins = []
 for plugin_name in ("libqxcb.so", "libqoffscreen.so"):
